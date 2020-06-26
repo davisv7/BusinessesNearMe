@@ -33,7 +33,7 @@ func main() {
 	filenamebox := widget.NewEntry()
 	filenamebox.SetPlaceHolder("Enter Filename Here...")
 	w.SetContent(widget.NewVBox(
-		widget.NewLabel("your api is: "+apikey),
+		//widget.NewLabel("your api is: "+apikey),
 		querybox,
 		thresholdbox,
 		filenamebox,
@@ -41,13 +41,15 @@ func main() {
 			query := querybox.Text
 			threshold, _ := strconv.ParseFloat(thresholdbox.Text, 64)
 			filename := filenamebox.Text
-			println(query)
-			println(threshold)
-			println(filename)
+			//println(query)
+			//println(threshold)
+			//println(filename)
 			filteredResults := search(apikey, query, float32(threshold))
 			save(filename,filteredResults)
 			println("Finished with this query!")
 			println("Results can be found in "+filename+".xlsx")
+			//note := fyne.NewNotification("Query completed successfully!","Results can be found in "+filename+".xlsx")
+			//app.SendNotification(note)
 		}),
 		widget.NewButton("Quit", func() {
 			app.Quit()
@@ -58,8 +60,9 @@ func main() {
 
 }
 
+
 func search(apikey string, query string, threshold float32) [][]string {
-	c, err := maps.NewClient(maps.WithAPIKey(apikey))
+	c, err := maps.NewClient(maps.WithAPIKey(apikey),maps.WithRateLimit(10))
 	if err != nil {
 		log.Fatalf("fatal error: %s", err)
 	}
@@ -89,7 +92,10 @@ func search(apikey string, query string, threshold float32) [][]string {
 				SessionToken: maps.PlaceAutocompleteSessionToken{},
 				Region:       "",
 			}
-			f, _ := c.PlaceDetails(context.Background(), details)
+			f, err := c.PlaceDetails(context.Background(), details)
+			if err != nil {
+				log.Fatalf("fatal error: %s", err)
+			}
 			//pretty.Println(f)
 			pretty.Println(f.Name, f.FormattedPhoneNumber, f.FormattedAddress, f.Rating, f.UserRatingsTotal)
 			filteredResults = append(filteredResults, []string{f.Name, f.FormattedPhoneNumber, f.FormattedAddress, strconv.FormatFloat(float64(f.Rating),'f',-1,32), strconv.Itoa(f.UserRatingsTotal)})
